@@ -49,7 +49,7 @@ export const useCheckout = () => {
       Swal.fire({
         icon: 'error',
         title: 'Oops...',
-        text: error?.response?.data || 'Something Went Wrong !',
+        text: error?.response?.detail || 'Something Went Wrong !',
       })
       console.log(error)
       useErrorStore.getState().setError(error?.response?.data || 'Something Went Wrong !')

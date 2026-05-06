@@ -45,69 +45,14 @@ function CheckoutForm({ onClose }) {
     e.preventDefault()
 
     try {
-      let payment_method_id = null
-
-      if (form.payment_method === 'gcash' || form.payment_method === 'paymaya') {
-        payment_method_id = await createEwalletPaymentMethod({
-          payment_method: form.payment_method,
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-        })
-      }
-
       const orderPayload = {
         ...form,
         sub_total: total,
         total_amount: totalAmout,
         cart_items: cart,
         delivery_address: deliveryAddress,
-        payment_method_id,
       }
-
-      console.log('orderPayload:', orderPayload)
-
-      const orderRes = await api.post('/orders/checkout', orderPayload)
-      const order = orderRes.data
-
-      if (form.payment_method !== 'card') {
-        if (order?.redirect_url) {
-          window.location.href = order.redirect_url
-          return
-        }
-
-        onClose()
-        return
-      }
-
-      const intentRes = await createPaymentIntent(order.id)
-
-      const paymentMethodId = await createCardPaymentMethod({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        card_number: form.card_number,
-        exp_month: form.exp_month,
-        exp_year: form.exp_year,
-        cvc: form.cvc,
-      })
-
-      const attachRes = await attachPaymentIntent(intentRes.payment_intent_id, paymentMethodId)
-
-      if (attachRes.status === 'awaiting_next_action') {
-        const redirectUrl = attachRes?.next_action?.redirect?.url || attachRes?.next_action?.redirect_url
-
-        if (redirectUrl) {
-          window.location.href = redirectUrl
-          return
-        }
-      }
-
-      if (attachRes.status === 'succeeded' || attachRes.status === 'processing') {
-        onClose()
-        window.location.href = `/payment/callback?payment_intent_id=${intentRes.payment_intent_id}`
-        return
-      }
+      checkout(orderPayload)
     } catch (error) {
       console.error(error)
       alert(error?.message || 'Payment failed.')
